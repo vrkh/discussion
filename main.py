@@ -1,39 +1,34 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
-import multiprocessing
-import threading
 import pyautogui
+import threading
 import ctypes
 import socket
+import pcinfo
+import time
 import sys
+import ast
 import os
 
-# Custom Widgets
-from custombuttons import MainButton
+# Custom widgets
 from windowhint import WindowHint
 
-WINDOW_GEOMETRY = (700, 500)
-HINT_HEIGHT = 25
-HINT_BUTTON_WIDTH = 40
+translate = QtCore.QCoreApplication.translate
 
-SECTIONS_FONT = QtGui.QFont()
-SECTIONS_FONT.setFamily('Segoe UI')
-SECTIONS_FONT.setPointSize(20)
+section_font = QtGui.QFont()
+section_font.setPixelSize(18)
+section_font.setFamily('Segoe UI')
 
-LINEEDIT_FONT = QtGui.QFont()
-LINEEDIT_FONT.setFamily('Segoe UI')
-LINEEDIT_FONT.setPointSize(14)
+lineedit_title_font = QtGui.QFont()
+lineedit_title_font.setPixelSize(12)
+lineedit_title_font.setFamily('Segoe UI')
 
-CHECKBOX_FONT = QtGui.QFont()
-CHECKBOX_FONT.setFamily('Segoe UI')
-CHECKBOX_FONT.setPointSize(10)
+lineedit_font = QtGui.QFont()
+lineedit_font.setPixelSize(15)
+lineedit_font.setFamily('Segoe UI')
 
 
 class MainWindow(QtWidgets.QMainWindow):
-
-    ##################################################
-    # Animations                                     #
-    ##################################################
-
+    # Animations
     def fade(self, widget: object, duration: int) -> None:
         self.effect = QtWidgets.QGraphicsOpacityEffect()
         widget.setGraphicsEffect(self.effect)
@@ -54,207 +49,227 @@ class MainWindow(QtWidgets.QMainWindow):
         self.animation.setEndValue(1)
         self.animation.start()
 
-    ##################################################
-    # Functions                                      #
-    ##################################################
+    # Open Registration frame
+    def show_registration_frame(self):
 
-    def authorize(self) -> None:
-        print('auth')
-        self.fade(self.authorize_frame, 300)
-        self.unfade(self.authorize_frame, 500)
-
-    def show_regisration_frame(self) -> None:
-        self.fade(self.authorize_frame, 300)
-
+        self.registration_frame.hide()
         self.fade(self.registration_frame, 0)
+
+        self.auth_frame.hide()
         self.registration_frame.show()
         self.unfade(self.registration_frame, 300)
-        self.authorize_frame.hide()
 
-    def show_login_frame(self) -> None:
-        self.fade(self.registration_frame, 300)
+    # Openg auth frame
+    def show_auth_frame(self):
 
-        self.fade(self.authorize_frame, 0)
-        self.authorize_frame.show()
-        self.unfade(self.authorize_frame, 300)
+        self.auth_frame.hide()
+        self.fade(self.auth_frame, 0)
+
         self.registration_frame.hide()
+        self.auth_frame.show()
+        self.unfade(self.auth_frame, 300)
 
-    def remember_me(self) -> None:
-        if self.remember_me_checkbox.isChecked():
-            self.remember_me_checkbox.setStyleSheet('QCheckBox{\ncolor: white;}QCheckBox::indicator { width: 15px; height: 15px; background-color: rgb(0, 170, 107); border-radius: 3px;}')
-        else:
-            self.remember_me_checkbox.setStyleSheet('QCheckBox{\ncolor: white;}QCheckBox::indicator { width: 15px; height: 15px; background-color: rgb(30, 30, 30); border-radius: 3px;}')
-
-    # def resizeEvent(self, event) -> None:
-    #     print(f"resize event")
-    #     QtWidgets.QMainWindow.resizeEvent(self, event)
-
-    def close_window(self) -> None:
-        print('close')
-        self.close()
-        application_is_running.value = 0
-
-    def minimize_window(self) -> None:
-        print('minimize')
-        self.showMinimized()
-
-    def hide_window(self) -> None:
-        print('hide')
-        self.hide()
+    def show_registration_code_frame(self):
+        pass
 
     def __init__(self) -> None:
         super().__init__()
 
-        self._translate = QtCore.QCoreApplication.translate
+        # Window settings
         self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
-        self.setStyleSheet('QMainWindow{\nbackground-color: rgb(20, 20, 20);}')
-        self.setGeometry((pyautogui.size()[0] // 2) - (WINDOW_GEOMETRY[0] // 2), (pyautogui.size()[1] // 2) - (WINDOW_GEOMETRY[1] // 2), WINDOW_GEOMETRY[0], WINDOW_GEOMETRY[1])
+        self.setGeometry(SCREEN_RESOLUTION[0] // 2 - AUTH_WINDOW_SIZE[0] // 2, SCREEN_RESOLUTION[1] // 2 - AUTH_WINDOW_SIZE[1] // 2, AUTH_WINDOW_SIZE[0], AUTH_WINDOW_SIZE[1])
+        self.setStyleSheet('QMainWindow{\nbackground-color: rgb%s;}' % str(WINDOW_BACK_COLOR))
 
-        ##################################################
-        # Window hint                                    #
-        ##################################################
+        # Window hint
+        self.auth_window_hint = WindowHint(self, HINT_HEIGHT, (5, 5, 5), 40)
 
-        self.window_hint = WindowHint(self, HINT_HEIGHT, (15, 15, 15), HINT_BUTTON_WIDTH)
+        self.auth_window_hint.setButton(lambda: self.close())
+        self.auth_window_hint.setButtonText('🞩', ('Segoe UI', 21))
+        self.auth_window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(5, 5, 5); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(255, 30, 30);}')
 
-        self.window_hint.setButton(self.close_window)
-        self.window_hint.setButtonText('🞩', ('Segoe UI', 14))
-        self.window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(15, 15, 15); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(255, 30, 30);}')
+        self.auth_window_hint.setButton(lambda: self.showMinimized())
+        self.auth_window_hint.setButtonText('⎯', ('Segoe UI', 18))
+        self.auth_window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(5, 5, 5); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(20, 20, 20);}')
 
-        self.window_hint.setButton(self.minimize_window)
-        self.window_hint.setButtonText('▭', ('Segoe UI', 20))
-        self.window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(15, 15, 15); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(40, 40, 40);}')
+        # Window settings
+        self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
+        self.setGeometry(SCREEN_RESOLUTION[0] // 2 - AUTH_WINDOW_SIZE[0] // 2, SCREEN_RESOLUTION[1] // 2 - AUTH_WINDOW_SIZE[1] // 2, AUTH_WINDOW_SIZE[0], AUTH_WINDOW_SIZE[1])
+        self.setStyleSheet('QMainWindow{\nbackground-color: rgb(%s);}' % WINDOW_BACK_COLOR)
 
-        self.window_hint.setButton(self.hide_window)
-        self.window_hint.setButtonText('⎯', ('Segoe UI', 12))
-        self.window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(15, 15, 15); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(40, 40, 40);}')
+        # Window hint
+        self.auth_window_hint = WindowHint(self, HINT_HEIGHT, (5, 5, 5), 40)
 
-        ##################################################
-        # Logging in                                     #
-        ##################################################
+        self.auth_window_hint.setButton(lambda: self.close())
+        self.auth_window_hint.setButtonText('🞩', ('Segoe UI', 21))
+        self.auth_window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(5, 5, 5); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(255, 30, 30);}')
 
-        # Authorize
+        self.auth_window_hint.setButton(lambda: self.showMinimized())
+        self.auth_window_hint.setButtonText('⎯', ('Segoe UI', 18))
+        self.auth_window_hint.setButtonStyles('QPushButton{\ncolor: white; background-color: rgb(5, 5, 5); border-radius: 0px;}QPushButton:hover{\nbackground-color: rgb(20, 20, 20);}')
 
-        self.authorize_frame = QtWidgets.QFrame(self)
-        self.authorize_frame.setGeometry(0, HINT_HEIGHT, WINDOW_GEOMETRY[0], WINDOW_GEOMETRY[1] - HINT_HEIGHT)
-        self.authorize_frame.setStyleSheet('QFrame{\nbackground-color: rgb(20, 20, 20);}')
+        # Auth Frame
+        self.auth_frame = QtWidgets.QFrame(self)
+        self.auth_frame.setGeometry(0, HINT_HEIGHT, self.width(), self.height() - HINT_HEIGHT)
+        self.auth_frame.setStyleSheet('QMainWindow{\nbackground-color: rgb%s;}' % str(WINDOW_BACK_COLOR))
 
-        self.authorize_label = QtWidgets.QLabel(self.authorize_frame)
-        self.authorize_label.setGeometry(0, 20 + HINT_HEIGHT, WINDOW_GEOMETRY[0], 40)
-        self.authorize_label.setStyleSheet('QLabel{\ncolor: white;}')
-        self.authorize_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.authorize_label.setFont(SECTIONS_FONT)
-        self.authorize_label.setText(self._translate("authorize", "АВТОРИЗАЦИЯ"))
+        self.auth_label = QtWidgets.QLabel(self.auth_frame)
+        self.auth_label.setGeometry(self.auth_frame.width() // 6, 40, self.auth_frame.width() // 6 * 4, 40)
+        self.auth_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.auth_label.setText(translate('', 'Авторизация'))
+        self.auth_label.setFont(section_font)
 
-        self.login_lineedit = QtWidgets.QLineEdit(self.authorize_frame)
-        self.login_lineedit.setGeometry(WINDOW_GEOMETRY[0] // 4, self.authorize_label.y() + 40, WINDOW_GEOMETRY[0] // 2, 40)
-        self.login_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); border: none; border-bottom: 2px solid rgb(255, 255, 255); color: white}')
-        self.login_lineedit.setFont(LINEEDIT_FONT)
-        self.login_lineedit.setPlaceholderText('Логин')
+        self.auth_lineedit_label = QtWidgets.QLabel(self.auth_frame)
+        self.auth_lineedit_label.setGeometry(self.auth_frame.width() // 6, 95, self.auth_frame.width() // 6 * 4, 20)
+        self.auth_lineedit_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.auth_lineedit_label.setText(translate('', 'Логин'))
+        self.auth_lineedit_label.setFont(lineedit_title_font)
 
-        self.password_lineedit = QtWidgets.QLineEdit(self.authorize_frame)
-        self.password_lineedit.setGeometry(WINDOW_GEOMETRY[0] // 4, self.authorize_label.y() + 110, WINDOW_GEOMETRY[0] // 2, 40)
-        self.password_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); border: none; border-bottom: 2px solid rgb(255, 255, 255); color: white}')
+        self.auth_lineedit = QtWidgets.QLineEdit(self.auth_frame)
+        self.auth_lineedit.setGeometry(self.auth_frame.width() // 6, 110, self.auth_frame.width() // 6 * 4, 40)
+        self.auth_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); color: white; border: none; border-bottom: 2px solid white;}')
+        self.auth_lineedit.setFont(lineedit_font)
+
+        self.password_lineedit_label = QtWidgets.QLabel(self.auth_frame)
+        self.password_lineedit_label.setGeometry(self.auth_frame.width() // 6, 185, self.auth_frame.width() // 6 * 4, 20)
+        self.password_lineedit_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.password_lineedit_label.setText(translate('', 'Пароль'))
+        self.password_lineedit_label.setFont(lineedit_title_font)
+
+        self.password_lineedit = QtWidgets.QLineEdit(self.auth_frame)
+        self.password_lineedit.setGeometry(self.auth_frame.width() // 6, 200, self.auth_frame.width() // 6 * 4, 40)
+        self.password_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); color: white; border: none; border-bottom: 2px solid white;}')
+        self.password_lineedit.setFont(lineedit_font)
         self.password_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.password_lineedit.setFont(LINEEDIT_FONT)
-        self.password_lineedit.setPlaceholderText('Пароль')
 
-        self.remember_me_checkbox = QtWidgets.QCheckBox(self.authorize_frame)
-        self.remember_me_checkbox.setGeometry(WINDOW_GEOMETRY[0] // 4, self.authorize_label.y() + 180, WINDOW_GEOMETRY[0] // 2, 40)
-        self.remember_me_checkbox.setStyleSheet('QCheckBox{\ncolor: white;}QCheckBox::indicator { width: 15px; height: 15px; background-color: rgb(30, 30, 30); border-radius: 3px;}')
-        self.remember_me_checkbox.setText(self._translate('Remember me', 'Запомнить меня'))
-        self.remember_me_checkbox.setFont(CHECKBOX_FONT)
-        self.remember_me_checkbox.stateChanged.connect(self.remember_me)
+        self.remember_me = QtWidgets.QCheckBox(self.auth_frame)
+        self.remember_me.setGeometry(self.auth_frame.width() // 6, 240, self.auth_frame.width() // 6 * 4, 40)
+        self.remember_me.setText(translate('', 'Запомнить меня'))
+        self.remember_me.setStyleSheet('QCheckBox{\ncolor: white; margin-bottom: 6px;}')
+        self.remember_me.setFont(lineedit_title_font)
 
-        self.authorize_button = MainButton(self.authorize_frame, WINDOW_GEOMETRY[0] // 2, self.authorize_label.y() + 185, WINDOW_GEOMETRY[0] // 4, 30, '#1e1e1e', '#00aa6c', '#ffffff', '#ffffff', 100)
-        self.authorize_button.setFont(CHECKBOX_FONT)
-        self.authorize_button.setText(self._translate('Authorize', 'Авторизоваться'))
-        self.authorize_button.clicked.connect(self.authorize)
+        self.login_button = QtWidgets.QPushButton(self.auth_frame)
+        self.login_button.setGeometry(self.auth_frame.width() // 6, 280, self.auth_frame.width() // 6 * 2 - 5, 40)
+        self.login_button.setStyleSheet('QPushButton{\nborder-radius: 6px; background-color: rgb(6, 17, 185); color: white;}')
+        self.login_button.setText(translate('', 'Авторизация'))
+        self.login_button.setFont(lineedit_title_font)
 
-        self.forget_password = QtWidgets.QPushButton(self.authorize_frame)
-        self.forget_password.setGeometry(WINDOW_GEOMETRY[0] // 3, self.authorize_frame.height() - 150, WINDOW_GEOMETRY[0] // 3, 25)
-        self.forget_password.setFont(CHECKBOX_FONT)
-        self.forget_password.setStyleSheet('QPushButton{\nbackground-color: rgb(20, 20, 20); border-radius: 0px; color: rgb(0, 170, 107);}')
-        self.forget_password.setText(self._translate('Forger', 'Сбросить пароль'))
-        self.forget_password.clicked.connect(self.authorize)
+        self.registration_button = QtWidgets.QPushButton(self.auth_frame)
+        self.registration_button.setGeometry(self.auth_frame.width() // 6 * 3 + 5, 280, self.auth_frame.width() // 6 * 2 - 5, 40)
+        self.registration_button.setStyleSheet('QPushButton{\nborder-radius: 6px; background-color: rgb(5, 5, 5); border: 1px solid rgb(6, 17, 185); color: rgb(6, 17, 185);}')
+        self.registration_button.setText(translate('', 'Регистрация'))
+        self.registration_button.setFont(lineedit_title_font)
+        self.registration_button.clicked.connect(self.show_registration_frame)
 
-        self.register_account = QtWidgets.QPushButton(self.authorize_frame)
-        self.register_account.setGeometry(WINDOW_GEOMETRY[0] // 3, self.authorize_frame.height() - 120, WINDOW_GEOMETRY[0] // 3, 25)
-        self.register_account.setFont(CHECKBOX_FONT)
-        self.register_account.setStyleSheet('QPushButton{\nbackground-color: rgb(20, 20, 20); border-radius: 0px; color: rgb(0, 170, 107)}')
-        self.register_account.setText(self._translate('Registrate', 'Зарегистрироваться'))
-        self.register_account.clicked.connect(self.show_regisration_frame)
-
-        # Forgot password
-
+        # Registration frame
         self.registration_frame = QtWidgets.QFrame(self)
-        self.registration_frame.setGeometry(0, HINT_HEIGHT, WINDOW_GEOMETRY[0], WINDOW_GEOMETRY[1] - HINT_HEIGHT)
-        self.registration_frame.setStyleSheet('QFrame{\nbackground-color: rgb(20, 20, 20);}')
+        self.registration_frame.setGeometry(0, HINT_HEIGHT, self.width(), self.height() - HINT_HEIGHT)
+        self.registration_frame.setStyleSheet('QMainWindow{\nbackground-color: rgb(%s);}' % WINDOW_BACK_COLOR)
 
         self.registration_label = QtWidgets.QLabel(self.registration_frame)
-        self.registration_label.setGeometry(0, 20 + HINT_HEIGHT, WINDOW_GEOMETRY[0], 40)
+        self.registration_label.setGeometry(self.registration_frame.width() // 6, 40, self.registration_frame.width() // 6 * 4, 40)
         self.registration_label.setStyleSheet('QLabel{\ncolor: white;}')
-        self.registration_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.registration_label.setFont(SECTIONS_FONT)
-        self.registration_label.setText(self._translate("Registrate", "РЕГИСТРАЦИЯ"))
+        self.registration_label.setText(translate('', 'Регистрация'))
+        self.registration_label.setFont(section_font)
 
-        self.registration_email_lineedit = QtWidgets.QLineEdit(self.registration_frame)
-        self.registration_email_lineedit.setGeometry(WINDOW_GEOMETRY[0] // 4, self.authorize_label.y() + 40, WINDOW_GEOMETRY[0] // 2, 40)
-        self.registration_email_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); border: none; border-bottom: 2px solid rgb(255, 255, 255); color: white}')
-        self.registration_email_lineedit.setFont(LINEEDIT_FONT)
-        self.registration_email_lineedit.setPlaceholderText('Почта')
+        self.registration_lineedit_label = QtWidgets.QLabel(self.registration_frame)
+        self.registration_lineedit_label.setGeometry(self.registration_frame.width() // 6, 95, self.registration_frame.width() // 6 * 4, 20)
+        self.registration_lineedit_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.registration_lineedit_label.setText(translate('', 'email'))
+        self.registration_lineedit_label.setFont(lineedit_title_font)
 
-        self.registation_login_lineedit = QtWidgets.QLineEdit(self.registration_frame)
-        self.registation_login_lineedit.setGeometry(WINDOW_GEOMETRY[0] // 4, self.authorize_label.y() + 110, WINDOW_GEOMETRY[0] // 2, 40)
-        self.registation_login_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); border: none; border-bottom: 2px solid rgb(255, 255, 255); color: white}')
-        self.registation_login_lineedit.setFont(LINEEDIT_FONT)
-        self.registation_login_lineedit.setPlaceholderText('Логин')
+        self.registration_lineedit = QtWidgets.QLineEdit(self.registration_frame)
+        self.registration_lineedit.setGeometry(self.registration_frame.width() // 6, 110, self.registration_frame.width() // 6 * 4, 40)
+        self.registration_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); color: white; border: none; border-bottom: 2px solid white;}')
+        self.registration_lineedit.setFont(lineedit_font)
 
-        self.registation_password_lineedit = QtWidgets.QLineEdit(self.registration_frame)
-        self.registation_password_lineedit.setGeometry(WINDOW_GEOMETRY[0] // 4, self.authorize_label.y() + 180, WINDOW_GEOMETRY[0] // 2, 40)
-        self.registation_password_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); border: none; border-bottom: 2px solid rgb(255, 255, 255); color: white}')
-        self.registation_password_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
-        self.registation_password_lineedit.setFont(LINEEDIT_FONT)
-        self.registation_password_lineedit.setPlaceholderText('Пароль')
+        self.registration_login_lineedit_label = QtWidgets.QLabel(self.registration_frame)
+        self.registration_login_lineedit_label.setGeometry(self.registration_frame.width() // 6, 185, self.registration_frame.width() // 6 * 4, 20)
+        self.registration_login_lineedit_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.registration_login_lineedit_label.setText(translate('', 'Логин'))
+        self.registration_login_lineedit_label.setFont(lineedit_title_font)
 
-        self.already_have_account = QtWidgets.QPushButton(self.registration_frame)
-        self.already_have_account.setGeometry(WINDOW_GEOMETRY[0] // 3, self.authorize_frame.height() - 120, WINDOW_GEOMETRY[0] // 3, 25)
-        self.already_have_account.setFont(CHECKBOX_FONT)
-        self.already_have_account.setStyleSheet('QPushButton{\nbackground-color: rgb(20, 20, 20); border-radius: 0px; color: rgb(0, 170, 107)}')
-        self.already_have_account.setText(self._translate('Already have', 'У меня уже есть аккаунт'))
-        self.already_have_account.clicked.connect(self.show_login_frame)
+        self.registration_login_lineedit = QtWidgets.QLineEdit(self.registration_frame)
+        self.registration_login_lineedit.setGeometry(self.registration_frame.width() // 6, 200, self.registration_frame.width() // 6 * 4, 40)
+        self.registration_login_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); color: white; border: none; border-bottom: 2px solid white;}')
+        self.registration_login_lineedit.setFont(lineedit_font)
 
-        self.registration_button = MainButton(self.registration_frame, WINDOW_GEOMETRY[0] // 3, self.authorize_label.y() + 255, WINDOW_GEOMETRY[0] // 3, 30, '#1e1e1e', '#00aa6c', '#ffffff', '#ffffff', 100)
-        self.registration_button.setFont(CHECKBOX_FONT)
-        self.registration_button.setText(self._translate('Registrate', 'Зарегистрироваться'))
-        self.registration_button.clicked.connect(self.authorize)
+        self.registration_password_lineedit_label = QtWidgets.QLabel(self.registration_frame)
+        self.registration_password_lineedit_label.setGeometry(self.registration_frame.width() // 6, 275, self.registration_frame.width() // 6 * 4, 20)
+        self.registration_password_lineedit_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.registration_password_lineedit_label.setText(translate('', 'Пароль'))
+        self.registration_password_lineedit_label.setFont(lineedit_title_font)
+
+        self.registration_password_lineedit = QtWidgets.QLineEdit(self.registration_frame)
+        self.registration_password_lineedit.setGeometry(self.registration_frame.width() // 6, 290, self.registration_frame.width() // 6 * 4, 40)
+        self.registration_password_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); color: white; border: none; border-bottom: 2px solid white;}')
+        self.registration_password_lineedit.setFont(lineedit_font)
+        self.registration_password_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
+
+        self.registation_registration_button = QtWidgets.QPushButton(self.registration_frame)
+        self.registation_registration_button.setGeometry(self.registration_frame.width() // 6, 350, self.registration_frame.width() // 6 * 2 - 5, 40)
+        self.registation_registration_button.setStyleSheet('QPushButton{\nborder-radius: 6px; background-color: rgb(6, 17, 185); color: white;}')
+        self.registation_registration_button.setText(translate('', 'Регистрация'))
+        self.registation_registration_button.setFont(lineedit_title_font)
+
+        self.registation_login_button = QtWidgets.QPushButton(self.registration_frame)
+        self.registation_login_button.setGeometry(self.registration_frame.width() // 6 * 3 + 5, 350, self.registration_frame.width() // 6 * 2 - 5, 40)
+        self.registation_login_button.setStyleSheet('QPushButton{\nborder-radius: 6px; background-color: rgb(5, 5, 5); border: 1px solid rgb(6, 17, 185); color: rgb(6, 17, 185);}')
+        self.registation_login_button.setText(translate('', 'Автоизация'))
+        self.registation_login_button.setFont(lineedit_title_font)
+        self.registation_login_button.clicked.connect(self.show_auth_frame)
 
         self.registration_frame.hide()
 
+        # Registration code frame
+        self.registration_code_frame = QtWidgets.QFrame(self)
+        self.registration_code_frame.setGeometry(0, HINT_HEIGHT, self.width(), self.height() - HINT_HEIGHT)
+        self.registration_code_frame.setStyleSheet('QFrame{\nbackground-color: rgb(%s);}' % WINDOW_BACK_COLOR)
 
-global APPDATA_DIRECTORY, application_is_running
-APPDATA_DIRECTORY = os.getenv('APPDATA')
-application_is_running = multiprocessing.Value(ctypes.c_int16, 1)
+        self.registration_code_label = QtWidgets.QLabel(self.registration_code_frame)
+        self.registration_code_label.setGeometry(self.registration_code_frame.width() // 6, 185, self.registration_code_frame.width() // 6 * 4, 20)
+        self.registration_code_label.setStyleSheet('QLabel{\ncolor: white;}')
+        self.registration_code_label.setText(translate('', 'Ключ с email'))
+        self.registration_code_label.setFont(lineedit_title_font)
 
-##################################################
-# Socket server                                  #
-##################################################
+        self.registration_code_lineedit = QtWidgets.QLineEdit(self.registration_code_frame)
+        self.registration_code_lineedit.setGeometry(self.registration_code_frame.width() // 6, 200, self.registration_code_frame.width() // 6 * 4, 40)
+        self.registration_code_lineedit.setStyleSheet('QLineEdit{\nbackground-color: rgba(0, 0, 0, 0); color: white; border: none; border-bottom: 2px solid white;}')
+        self.registration_code_lineedit.setFont(lineedit_font)
+
+        self.registation_registration_button = QtWidgets.QPushButton(self.registration_code_frame)
+        self.registation_registration_button.setGeometry(self.registration_code_frame.width() // 6, 260, self.registration_code_frame.width() - 115, 40)
+        self.registation_registration_button.setStyleSheet('QPushButton{\nborder-radius: 6px; background-color: rgb(6, 17, 185); color: white;}')
+        self.registation_registration_button.setText(translate('', 'Регистрация'))
+        self.registation_registration_button.setFont(lineedit_title_font)
+
+        self.registration_code_frame.hide()
 
 
-def socket_server() -> None:
-    global client
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(('178.250.158.150', 1337))
+AUTH_WINDOW_SIZE = 350, 500
+HINT_HEIGHT = 25
+WINDOW_BACK_COLOR = '5, 5, 5'
+SCREEN_RESOLUTION = pyautogui.size()
+APPDATA_PATH = os.getenv('APPDATA')
 
-    while application_is_running.value:
-        server_data = client.recv(65536)
+
+# Server
+def start_server():
+    global server
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.connect(('178.250.158.150', 7070))
+
+    while True:
+        server_data = server.recv(4096).decode('utf-8')
         if server_data:
-            print(server_data.decode('utf-8'))
+            print('[SERVER]:', server_data)
 
+            if server_data == 'stop':
+                break
 
-# Strart server in extra thread
-threading.Thread(target=socket_server).start()
 
 application = QtWidgets.QApplication(sys.argv)
 messanger_window = MainWindow()
+threading.Thread(target=start_server).start()
 messanger_window.show()
 application.exec()

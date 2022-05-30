@@ -39,7 +39,7 @@ class WindowHint:
     def setButtonText(self, text: str, font: tuple) -> None:
         self.font = QtGui.QFont()
         self.font.setFamily(font[0])
-        self.font.setPointSize(font[1])
+        self.font.setPixelSize(font[1])
         self.button.setFont(self.font)
         self.button.setText(self._translate("close", text))
 
