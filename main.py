@@ -1,5 +1,6 @@
 import multiprocessing
 from PyQt5 import QtWidgets, QtCore, QtGui
+from matplotlib.style import use
 import pyautogui
 import threading
 import ctypes
