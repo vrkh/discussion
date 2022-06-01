@@ -76,16 +76,22 @@ def try_to_auth() -> None:
         server.send(f'trytoauth {input_login} {input_password}'.encode())
 
 
+def send_message(sender, getter, message):
+    server.send(f'message ["{sender}","{getter}"] {message}'.encode('utf-8'))
+
+
 class MainWindow(QtWidgets.QWidget):
     global SEARCH_USERS_LIST
     global MESSAGE_USERS_LIST
     global server
+    global username, password, getter
 
     # Messenger logic
     def show_messages(self):
         self.search_button.setStyleSheet('QPushButton{\nbackground-image: url(images/magnifier.png); border: none;}')
         self.search_button.clicked.disconnect()
         self.search_button.clicked.connect(self.search_for_users)
+        self.search_button.update()
 
     def search_for_users(self):
         server.send('userslist'.encode())
@@ -138,11 +144,12 @@ class MainWindow(QtWidgets.QWidget):
         self.messages_frame = QtWidgets.QFrame(self)
         self.messages_frame.setGeometry(-1, HINT_HEIGHT + 50, 401, self.height() - HINT_HEIGHT - 49)
         self.messages_frame.setStyleSheet('QFrame{\nborder: 1px solid rgb(45, 50, 60);}')
+        Message(self.messages_frame, 0, 0, 'client1', '(184, 44, 0)', 0)
 
         # Message frame
-        self.message_frame = QtWidgets.QFrame(self)
+        self.message_frame = QtWidgets.QLabel(self)
         self.message_frame.setGeometry(399, HINT_HEIGHT, self.width() + 1, self.height() - HINT_HEIGHT - 49)
-        self.message_frame.setStyleSheet('QFrame{\nborder: 1px solid rgb(45, 50, 60);}')
+        self.message_frame.setStyleSheet('QLabel{\nborder: 1px solid rgb(45, 50, 60); color: white;}')
 
         # Send frame
         self.send_frame = QtWidgets.QFrame(self)
@@ -158,6 +165,7 @@ class MainWindow(QtWidgets.QWidget):
         self.send_button.setGeometry(self.send_frame.width() - 40, 10, 30, 30)
         self.send_button.setStyleSheet('QPushButton{\nbackground-image: url(images/plane.png); border: none;}')
         self.send_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.send_button.clicked.connect(lambda: send_message(username, getter, self.message_lineedit.text()))
 
 
 class StartWindow(QtWidgets.QMainWindow):
@@ -377,6 +385,14 @@ def start_server():
                     user = user.split('.txt')[0]
                     SEARCH_USERS_LIST[index] = user.encode()
 
+            if server_data.startswith('message'):
+                message_data = server_data.split(' ')
+                sender_data = ast.literal_eval(message_data[1])[0]
+                message = ''.join(message_data[2:])
+
+                print(f"{sender_data} : {message}")
+                window.message_frame.setText(translate('', f'{window.message_frame.text()}{sender_data} : {message}\n'))
+
             if server_data == 'stop':
                 break
 
@@ -389,9 +405,15 @@ def show_main_window():
     application.exec()
 
 
-application = QtWidgets.QApplication(sys.argv)
-messanger_window = StartWindow()
+username = 'client2'
+password = '321'
+getter = 'client1'
+
+print(f'username: {username}\npassword: {password}')
+
+# application = QtWidgets.QApplication(sys.argv)
+# messanger_window = StartWindow()
 threading.Thread(target=start_server).start()
-messanger_window.show()
-application.exec()
-# show_main_window()
+# messanger_window.show()
+# application.exec()
+show_main_window()
