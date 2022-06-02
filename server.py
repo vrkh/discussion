@@ -5,6 +5,7 @@ import random
 import glob
 import os
 
+
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('178.250.158.150', 7070))
 server.listen()
@@ -15,7 +16,7 @@ def client_socket_listener(client: object, address: Any) -> None:
     clients.append(client)
     while True:
         try:
-            client_request = client.recv(4096).decode('utf-8')
+            client_request = client.recv(4096).decode()
             if client_request:
                 print(client_request)
 
@@ -52,8 +53,12 @@ def client_socket_listener(client: object, address: Any) -> None:
 
             if client_request.startswith('userslist'):
                 users_list = glob.glob('*.txt')
-                print(users_list)
-                client.send(f'userslist {users_list}'.encode())
+                users_list = str(users_list)
+                users = ''
+                for char in users_list:
+                    if char != ' ':
+                        users += char
+                client.send(f'userslist {users}'.encode())
 
             if client_request.startswith('message'):
                 for user in clients:

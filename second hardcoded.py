@@ -1,4 +1,3 @@
-from email import message
 import multiprocessing
 from PyQt5 import QtWidgets, QtCore, QtGui
 from matplotlib.style import use
@@ -6,10 +5,7 @@ import pyautogui
 import threading
 import ctypes
 import socket
-
-from tomlkit import item
 import pcinfo
-import random
 import time
 import sys
 import ast
@@ -20,22 +16,6 @@ from windowhint import WindowHint
 from messengerwidgets import SearchUser, Message
 
 translate = QtCore.QCoreApplication.translate
-
-
-AUTH_WINDOW_SIZE = 350, 500
-HINT_HEIGHT = 25
-WINDOW_BACK_COLOR = '5, 5, 5'
-SCREEN_RESOLUTION = pyautogui.size()
-APPDATA_PATH = os.getenv('APPDATA')
-password = ''
-username = ''
-getter = ''
-search_users_list = []
-
-
-MESSENGER_WINDOW_SIZE = 1100, 600
-SEARCH_USERS_LIST = multiprocessing.Array(ctypes.c_char_p, 500)
-MESSAGE_USERS_LIST = multiprocessing.Array(ctypes.c_char_p, 500)
 
 section_font = QtGui.QFont()
 section_font.setPixelSize(18)
@@ -48,10 +28,6 @@ lineedit_title_font.setFamily('Segoe UI')
 lineedit_font = QtGui.QFont()
 lineedit_font.setPixelSize(15)
 lineedit_font.setFamily('Segoe UI')
-
-
-def send_message(sender, getter, message):
-    server.send(f'message ["{sender}","{getter}"] {message}'.encode())
 
 
 # Start frame logic
@@ -100,34 +76,24 @@ def try_to_auth() -> None:
         server.send(f'trytoauth {input_login} {input_password}'.encode())
 
 
-def set_getter(value):
-    global getter
-    global search_users_list
-    getter = search_users_list[value].user_name.text()
-    print(username, getter)
-    window.message_title_frame.setText(translate('', getter))
+def send_message(sender, getter, message):
+    server.send(f'message ["{sender}","{getter}"] {message}'.encode('utf-8'))
 
 
 class MainWindow(QtWidgets.QWidget):
     global SEARCH_USERS_LIST
     global MESSAGE_USERS_LIST
     global server
-    global username
-    global set_getter
-    global search_users_list
+    global username, password, getter
 
     # Messenger logic
-
     def show_messages(self):
-        for item in search_users_list:
-            item.hide()
-
         self.search_button.setStyleSheet('QPushButton{\nbackground-image: url(images/magnifier.png); border: none;}')
         self.search_button.clicked.disconnect()
         self.search_button.clicked.connect(self.search_for_users)
+        self.search_button.update()
 
     def search_for_users(self):
-
         server.send('userslist'.encode())
         while not list(SEARCH_USERS_LIST)[0]:
             pass
@@ -135,18 +101,6 @@ class MainWindow(QtWidgets.QWidget):
             self.search_button.setStyleSheet('QPushButton{\nbackground-image: url(images/cross.png); border: none;}')
             self.search_button.clicked.disconnect()
             self.search_button.clicked.connect(self.show_messages)
-
-            for user in list(SEARCH_USERS_LIST):
-                if user:
-                    if window.search_lineedit.text() in user.decode():
-                        window.messages_container.addWidget(SearchUser(user.decode(), f'({random.randint(0, 255)}, {random.randint(0, 255)}, {random.randint(0, 255)})'))
-                else:
-                    break
-            users = [window.messages_container.itemAt(i).widget() for i in range(1, window.messages_container.count())]
-            search_users_list.extend(users)
-
-            for i in range(len(search_users_list)):
-                exec(f"search_users_list[{i}].clicked.connect(lambda: set_getter({i}))")
 
             # Cleaning up the Search user list
             for i in range(500):
@@ -187,26 +141,15 @@ class MainWindow(QtWidgets.QWidget):
         self.search_button.clicked.connect(self.search_for_users)
 
         # Messages frame
-        self.messages_container = QtWidgets.QVBoxLayout()
-        self.messages_container.addStretch(0)
         self.messages_frame = QtWidgets.QFrame(self)
         self.messages_frame.setGeometry(-1, HINT_HEIGHT + 50, 401, self.height() - HINT_HEIGHT - 49)
         self.messages_frame.setStyleSheet('QFrame{\nborder: 1px solid rgb(45, 50, 60);}')
-        self.messages_frame.setLayout(self.messages_container)
-
-        # Message title frame
-        self.message_title_frame = QtWidgets.QLabel(self)
-        self.message_title_frame.setGeometry(399, HINT_HEIGHT, self.width() - 398, 51)
-        self.message_title_frame.setStyleSheet('QFrame{\nborder: 1px solid rgb(45, 50, 60); color: white;}')
-        self.message_title_frame.setAlignment(QtCore.Qt.AlignCenter)
-        self.message_title_frame.setFont(section_font)
-        self.message_title_frame.setText(translate('', 'Выберите получателя...'))
+        Message(self.messages_frame, 0, 0, 'client1', '(184, 44, 0)', 0)
 
         # Message frame
         self.message_frame = QtWidgets.QLabel(self)
-        self.message_frame.setGeometry(399, HINT_HEIGHT + 50, self.width() + 1, self.height() - HINT_HEIGHT - 49)
-        self.message_frame.setStyleSheet('QFrame{\nborder: 1px solid rgb(45, 50, 60); color: white;}')
-        self.message_frame.setFont(lineedit_title_font)
+        self.message_frame.setGeometry(399, HINT_HEIGHT, self.width() + 1, self.height() - HINT_HEIGHT - 49)
+        self.message_frame.setStyleSheet('QLabel{\nborder: 1px solid rgb(45, 50, 60); color: white;}')
 
         # Send frame
         self.send_frame = QtWidgets.QFrame(self)
@@ -393,6 +336,19 @@ class StartWindow(QtWidgets.QMainWindow):
         self.registration_frame.hide()
 
 
+AUTH_WINDOW_SIZE = 350, 500
+HINT_HEIGHT = 25
+WINDOW_BACK_COLOR = '5, 5, 5'
+SCREEN_RESOLUTION = pyautogui.size()
+APPDATA_PATH = os.getenv('APPDATA')
+password = ''
+username = ''
+
+MESSENGER_WINDOW_SIZE = 1100, 600
+SEARCH_USERS_LIST = multiprocessing.Array(ctypes.c_char_p, 500)
+MESSAGE_USERS_LIST = multiprocessing.Array(ctypes.c_char_p, 500)    
+
+
 # Server
 def start_server():
     global server
@@ -431,12 +387,11 @@ def start_server():
 
             if server_data.startswith('message'):
                 message_data = server_data.split(' ')
-                data = ast.literal_eval(message_data[1])
+                sender_data = ast.literal_eval(message_data[1])[0]
                 message = ''.join(message_data[2:])
-                if data[1] == username:
-                    window.message_frame.setText(translate('', f'{window.message_frame.text()}{data[0]} -> {data[1]} : {message}\n'))
-                if data[0] == username:
-                    window.message_frame.setText(translate('', f'{window.message_frame.text()}{data[0]} -> {data[1]} : {message}\n'))
+
+                print(f"{sender_data} : {message}")
+                window.message_frame.setText(translate('', f'{window.message_frame.text()}{sender_data} : {message}\n'))
 
             if server_data == 'stop':
                 break
@@ -450,9 +405,15 @@ def show_main_window():
     application.exec()
 
 
-application = QtWidgets.QApplication(sys.argv)
-messanger_window = StartWindow()
+username = 'client2'
+password = '321'
+getter = 'client1'
+
+print(f'username: {username}\npassword: {password}')
+
+# application = QtWidgets.QApplication(sys.argv)
+# messanger_window = StartWindow()
 threading.Thread(target=start_server).start()
-messanger_window.show()
-application.exec()
-# show_main_window()
+# messanger_window.show()
+# application.exec()
+show_main_window()

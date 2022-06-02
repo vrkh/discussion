@@ -1,4 +1,5 @@
 from PyQt5 import QtWidgets, QtCore, QtGui
+from matplotlib.style import use
 import pyautogui
 import threading
 import ctypes
@@ -15,31 +16,31 @@ username_font.setPixelSize(14)
 translate = QtCore.QCoreApplication.translate
 
 letter_font = QtGui.QFont()
-letter_font.setFamily('Segoe UI')
-letter_font.setPixelSize(40)
+letter_font.setFamily('Arial')
+letter_font.setPixelSize(30)
 letter_font.setBold(True)
 
 translate = QtCore.QCoreApplication.translate
 
 
 class SearchUser(QtWidgets.QPushButton):
-    def __init__(self, parent: object, x: int, y: int, username: str, color: str) -> None:
-        super().__init__(parent)
+    def __init__(self, username: str, color: str) -> None:
+        super().__init__()
 
-        self.setGeometry(x, y, 401, 80)
-        self.setStyleSheet('QPushButton{\nborder: 1px solid rgb(45, 50, 60);}')
+        self.setFixedSize(380, 60)
+        self.setStyleSheet('QPushButton{\nbackground-color: rgb(20, 24, 30); border: none;}')
 
         self.user_letter = QtWidgets.QPushButton(self)
-        self.user_letter.setGeometry(10, 10, 60, 60)
-        self.user_letter.setStyleSheet('QPushButton{\nbackground-color: rgb%s; border-radius: 30px; color: white; border: none;}' % color)
+        self.user_letter.setGeometry(10, 10, 40, 40)
+        self.user_letter.setStyleSheet('QPushButton{\nbackground-color: rgb%s; border-radius: 20px; color: white; border: none;}' % color)
         self.user_letter.setFont(letter_font)
         self.user_letter.setText(translate('', username[0].upper()))
 
         self.user_name = QtWidgets.QLabel(self)
-        self.user_name.setGeometry(80, 1, 401 - 80, 78)
+        self.user_name.setGeometry(60, 1, 401 - 80, 58)
         self.user_name.setText(translate('', username))
         self.user_name.setFont(username_font)
-        self.user_name.setStyleSheet('QLabel{\nborder: none; color: white;}')
+        self.user_name.setStyleSheet('QLabel{\nborder: none; color: white; background-color: rgb(20, 24, 30);}')
 
     def connect(self, function) -> None:
         self.clicked.connect(function)
