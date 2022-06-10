@@ -61,13 +61,16 @@ def decode_chars(message_array):
 
 
 def send_message(sender, getter, message):
-    if len(message) <= 100:
-        if getter:
-            server.send(f'message ["{sender}","{getter}"] {encode_chars(message)}'.encode())
-        else:
-            ctypes.windll.user32.MessageBoxW(0, f'Получатель не выбран.', 'Ошибка', 0x10)
+    if message.strip() == '/clear':
+        window.message_frame.setText(translate('', ''))
     else:
-        ctypes.windll.user32.MessageBoxW(0, f'Максимальная длина сообщения - 100.\nВаше сообщение содержит {len(message)} символов.', 'Ошибка', 0x10)
+        if len(message) <= 100:
+            if getter:
+                server.send(f'message ["{sender}","{getter}"] {encode_chars(message)}'.encode())
+            else:
+                ctypes.windll.user32.MessageBoxW(0, f'Получатель не выбран.', 'Ошибка', 0x10)
+        else:
+            ctypes.windll.user32.MessageBoxW(0, f'Максимальная длина сообщения - 100.\nВаше сообщение содержит {len(message)} символов.', 'Ошибка', 0x10)
 
 
 # Start frame logic
