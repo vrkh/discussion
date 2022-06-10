@@ -6,11 +6,7 @@ import pyautogui
 import threading
 import ctypes
 import socket
-
-from tomlkit import item
-import pcinfo
 import random
-import time
 import sys
 import ast
 import os
@@ -50,8 +46,28 @@ lineedit_font.setPixelSize(15)
 lineedit_font.setFamily('Segoe UI')
 
 
+def encode_chars(message):
+    message_array = []
+    for char in message:
+        message_array.append(ord(char))
+    return message_array
+
+
+def decode_chars(message_array):
+    message = ''
+    for char in message_array:
+        message += chr(char)
+    return message
+
+
 def send_message(sender, getter, message):
-    server.send(f'message ["{sender}","{getter}"] {message}'.encode())
+    if len(message) <= 100:
+        if getter:
+            server.send(f'message ["{sender}","{getter}"] {encode_chars(message)}'.encode())
+        else:
+            ctypes.windll.user32.MessageBoxW(0, f'Получатель не выбран.', 'Ошибка', 0x10)
+    else:
+        ctypes.windll.user32.MessageBoxW(0, f'Максимальная длина сообщения - 100.\nВаше сообщение содержит {len(message)} символов.', 'Ошибка', 0x10)
 
 
 # Start frame logic
@@ -405,7 +421,7 @@ def start_server():
     while True:
         global SEARCH_USERS_LIST
         global MESSAGE_USERS_LIST
-        server_data = server.recv(4096).decode()
+        server_data = server.recv(4096).decode('utf-8')
         if server_data:
             print('[SERVER]:', server_data)
 
@@ -430,13 +446,13 @@ def start_server():
                     SEARCH_USERS_LIST[index] = user.encode()
 
             if server_data.startswith('message'):
-                message_data = server_data.split(' ')
+                message_data = server_data.split(' ', 2)
                 data = ast.literal_eval(message_data[1])
-                message = ''.join(message_data[2:])
+                message = ast.literal_eval(message_data[2])
                 if data[1] == username:
-                    window.message_frame.setText(translate('', f'{window.message_frame.text()}{data[0]} -> {data[1]} : {message}\n'))
+                    window.message_frame.setText(translate('', f'{window.message_frame.text()}{data[0]} -> {data[1]} : {decode_chars(message)}\n'))
                 if data[0] == username:
-                    window.message_frame.setText(translate('', f'{window.message_frame.text()}{data[0]} -> {data[1]} : {message}\n'))
+                    window.message_frame.setText(translate('', f'{window.message_frame.text()}{data[0]} -> {data[1]} : {decode_chars(message)}\n'))
 
             if server_data == 'stop':
                 break

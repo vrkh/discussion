@@ -16,7 +16,7 @@ def client_socket_listener(client: object, address: Any) -> None:
     clients.append(client)
     while True:
         try:
-            client_request = client.recv(4096).decode()
+            client_request = client.recv(4096).decode('utf-8')
             if client_request:
                 print(client_request)
 
